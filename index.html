@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dra. Roseli Perfoll — App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.23.4/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #060e18;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    ::-webkit-scrollbar { display: none; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes growBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @keyframes subtleGlow {
+      0%, 100% { opacity: 0.4; }
+      50%      { opacity: 0.65; }
+    }
+    .screen-enter { animation: fadeIn 0.3s ease-out both; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+  const { useState, useEffect } = React;
+
+  // ─────────────────────────────────────────────
+  //  DESIGN TOKENS
+  // ─────────────────────────────────────────────
+  const C = {
+    bg:        '#0D1B2A',
+    bgCard:    'rgba(255,255,255,0.042)',
+    bgGold:    'rgba(201,169,110,0.08)',
+    bgGoldSub: 'rgba(201,169,110,0.05)',
+    border:    'rgba(201,169,110,0.14)',
+    borderSub: 'rgba(255,255,255,0.07)',
+    gold:      '#C9A96E',
+    goldLight: '#DFC49A',
+    text:      '#F8F5F0',
+    muted:     'rgba(248,245,240,0.48)',
+    muted2:    'rgba(248,245,240,0.28)',
+    tabBg:     'rgba(5,12,22,0.97)',
+    paused:    'rgba(248,245,240,0.22)',
+  };
+
+  // ─────────────────────────────────────────────
+  //  IOS FRAME  (iPhone 15 Pro — 393 × 852)
+  // ─────────────────────────────────────────────
+  function IosFrame({ children, time = '9:41', battery = 92 }) {
+    return (
+      <div style={{
+        display: 'inline-block', padding: 12,
+        background: '#040a12',
+        borderRadius: 60,
+        boxShadow: '0 0 0 1.5px #111a24, 0 0 0 3px #080f18, 0 40px 90px rgba(0,0,0,0.8)',
+      }}>
+        <div style={{
+          position: 'relative', width: 393, height: 852,
+          borderRadius: 48, overflow: 'hidden', background: C.bg,
+        }}>
+          {/* Status bar */}
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: 54,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '0 28px', fontSize: 15, fontWeight: 600,
+            fontFamily: '-apple-system, "SF Pro Text", sans-serif',
+            color: C.text, zIndex: 20, pointerEvents: 'none',
+          }}>
+            <span style={{ letterSpacing: '-0.3px' }}>{time}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {[4,6,9,11].map((h,i) => (
+                <div key={i} style={{ width: 3, height: h, background: C.text, borderRadius: 1, marginBottom: 0 }} />
+              ))}
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="none" style={{ marginLeft: 2 }}>
+                <path d="M8 11.5a1 1 0 100-2 1 1 0 000 2z" fill="white"/>
+                <path d="M3 7.5a7 7 0 0110 0" stroke="white" strokeWidth="1.3" fill="none" strokeLinecap="round"/>
+                <path d="M1 4.5a11 11 0 0114 0" stroke="white" strokeWidth="1.3" fill="none" strokeLinecap="round" opacity=".65"/>
+              </svg>
+              <div style={{ width: 26, height: 12, border: '1.5px solid rgba(248,245,240,0.75)', borderRadius: 3, padding: 1, position: 'relative', marginLeft: 2 }}>
+                <div style={{ width: `${battery}%`, height: '100%', background: C.text, borderRadius: 1 }} />
+                <div style={{ position: 'absolute', top: 3, right: -3, width: 2, height: 6, background: 'rgba(248,245,240,0.7)', borderRadius: '0 1px 1px 0' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Dynamic Island */}
+          <div style={{
+            position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+            width: 124, height: 36, background: '#000', borderRadius: 999, zIndex: 30,
+          }} />
+
+          {/* Content */}
+          <div style={{ position: 'absolute', top: 54, left: 0, right: 0, bottom: 34, overflow: 'hidden' }}>
+            {children}
+          </div>
+
+          {/* Home indicator */}
+          <div style={{
+            position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
+            width: 140, height: 5, background: 'rgba(248,245,240,0.25)', borderRadius: 999, zIndex: 10,
+          }} />
+        </div>
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  MONOGRAM RP
+  // ─────────────────────────────────────────────
+  function Monogram({ size = 64, ringOpacity = 0.55 }) {
+    return (
+      <div style={{
+        width: size, height: size, borderRadius: '50%',
+        border: `${size * 0.022}px solid rgba(201,169,110,${ringOpacity})`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        position: 'relative', flexShrink: 0,
+      }}>
+        <div style={{
+          position: 'absolute', inset: size * 0.1, borderRadius: '50%',
+          border: `${size * 0.008}px solid rgba(201,169,110,0.18)`,
+        }} />
+        <span style={{
+          fontFamily: "'Playfair Display', serif",
+          fontSize: size * 0.36, fontWeight: 400, fontStyle: 'italic',
+          color: C.gold, letterSpacing: '-0.5px',
+        }}>RP</span>
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  TAB BAR
+  // ─────────────────────────────────────────────
+  const TAB_DEFS = [
+    {
+      id: 'home', label: 'Home',
+      icon: (
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      ),
+    },
+    {
+      id: 'protocolo', label: 'Protocolo',
+      icon: (
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+        </svg>
+      ),
+    },
+    {
+      id: 'nutricao', label: 'Nutrição',
+      icon: (
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 8h1a4 4 0 010 8h-1"/>
+          <path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/>
+          <line x1="6" y1="1" x2="6" y2="4"/>
+          <line x1="10" y1="1" x2="10" y2="4"/>
+          <line x1="14" y1="1" x2="14" y2="4"/>
+        </svg>
+      ),
+    },
+    {
+      id: 'biblioteca', label: 'Biblioteca',
+      icon: (
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+        </svg>
+      ),
+    },
+    {
+      id: 'perfil', label: 'Perfil',
+      icon: (
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      ),
+    },
+  ];
+
+  function TabBar({ active, onTab }) {
+    return (
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: 78,
+        background: C.tabBg, backdropFilter: 'blur(20px)',
+        borderTop: `1px solid rgba(201,169,110,0.1)`,
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-around',
+        padding: '10px 0 0', zIndex: 50,
+      }}>
+        {TAB_DEFS.map(t => {
+          const on = active === t.id;
+          return (
+            <button key={t.id} onClick={() => onTab(t.id)} style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+              color: on ? C.gold : C.muted,
+              transition: 'color 0.2s',
+              minWidth: 0, flex: 1, padding: 0,
+            }}>
+              {t.icon}
+              <span style={{
+                fontSize: 9.5, fontFamily: 'Inter', fontWeight: on ? 600 : 400,
+                letterSpacing: '0.03em',
+              }}>{t.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  SCREEN 1 — ONBOARDING
+  // ─────────────────────────────────────────────
+  function OnboardingScreen({ onStart }) {
+    return (
+      <div className="screen-enter" style={{
+        width: '100%', height: '100%',
+        background: C.bg, position: 'relative', overflow: 'hidden',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'space-between',
+        padding: '52px 36px 44px',
+      }}>
+        {/* Background radial glow */}
+        <div style={{
+          position: 'absolute', top: '35%', left: '50%', transform: 'translate(-50%,-50%)',
+          width: 300, height: 300, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(201,169,110,0.07) 0%, transparent 68%)',
+          pointerEvents: 'none',
+          animation: 'subtleGlow 6s ease-in-out infinite',
+        }} />
+        {/* Dot grid — very faint */}
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          backgroundImage: 'radial-gradient(circle, rgba(201,169,110,0.08) 1px, transparent 1px)',
+          backgroundSize: '32px 32px', opacity: 0.6,
+        }} />
+
+        <div /> {/* spacer top */}
+
+        {/* Center block */}
+        <div style={{
+          position: 'relative', zIndex: 1,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22,
+        }}>
+          <div style={{ animation: 'fadeUp 0.7s ease-out 0.05s both' }}>
+            <Monogram size={92} />
+          </div>
+
+          <div style={{ textAlign: 'center', animation: 'fadeUp 0.7s ease-out 0.18s both' }}>
+            <div style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: 30, fontWeight: 700, color: C.text,
+              letterSpacing: '-0.3px', lineHeight: 1.15,
+            }}>Dra. Roseli Perfoll</div>
+            <div style={{
+              fontFamily: 'Inter', fontSize: 11, fontWeight: 500,
+              letterSpacing: '0.22em', textTransform: 'uppercase',
+              color: C.muted, marginTop: 7,
+            }}>Peptídeos · Longevidade Feminina</div>
+          </div>
+
+          {/* Thin gold rule */}
+          <div style={{
+            width: 1, height: 52,
+            background: `linear-gradient(to bottom, transparent, ${C.gold}, transparent)`,
+            animation: 'fadeIn 0.8s ease-out 0.35s both',
+          }} />
+
+          <div style={{ textAlign: 'center', maxWidth: 266, animation: 'fadeUp 0.7s ease-out 0.45s both' }}>
+            <p style={{
+              fontFamily: "'Playfair Display', serif",
+              fontStyle: 'italic', fontSize: 19, lineHeight: 1.55,
+              color: C.goldLight, letterSpacing: '0.01em',
+            }}>"Longevidade<br/>com evidência"</p>
+          </div>
+        </div>
+
+        {/* CTAs */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: 11,
+          width: '100%', maxWidth: 310, position: 'relative', zIndex: 1,
+          animation: 'fadeUp 0.6s ease-out 0.58s both',
+        }}>
+          <button onClick={onStart} style={{
+            width: '100%', padding: '15.5px',
+            background: C.gold, border: 'none', borderRadius: 14,
+            color: '#0D1B2A', fontFamily: 'Inter',
+            fontSize: 15, fontWeight: 700, letterSpacing: '0.03em',
+            cursor: 'pointer',
+            boxShadow: '0 8px 28px rgba(201,169,110,0.28)',
+            transition: 'transform 0.14s, box-shadow 0.14s',
+          }}
+          onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.97)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(201,169,110,0.2)'; }}
+          onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(201,169,110,0.28)'; }}
+          >Entrar</button>
+
+          <button onClick={onStart} style={{
+            width: '100%', padding: '14.5px',
+            background: 'transparent',
+            border: `1px solid ${C.border}`,
+            borderRadius: 14, color: C.muted,
+            fontFamily: 'Inter', fontSize: 14, fontWeight: 500,
+            cursor: 'pointer', transition: 'border-color 0.15s, color 0.15s',
+          }}
+          onMouseDown={e => { e.currentTarget.style.borderColor = C.gold; e.currentTarget.style.color = C.text; }}
+          onMouseUp={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.muted; }}
+          >Primeira vez aqui?</button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  SCREEN 2 — HOME
+  // ─────────────────────────────────────────────
+  const ARTICLES = [
+    { title: 'Mecanismos de cicatrização via BPC-157: revisão sistemática', source: 'J. Peptide Science', year: 2024, mins: 8 },
+    { title: 'GHK-Cu e regeneração dérmica: evidências em estudos controlados', source: 'Int. J. Mol. Sciences', year: 2023, mins: 12 },
+    { title: 'Epithalon e regulação da telomerase em células humanas', source: 'Rejuvenation Research', year: 2024, mins: 10 },
+  ];
+
+  function HomeScreen({ onNav }) {
+    return (
+      <div className="screen-enter" style={{ width: '100%', height: '100%', background: C.bg, position: 'relative' }}>
+        <div style={{ height: 'calc(100% - 78px)', overflowY: 'auto' }}>
+
+          {/* ── Header ─────────────────── */}
+          <div style={{ padding: '18px 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ animation: 'fadeUp 0.5s ease-out 0.05s both' }}>
+              <p style={{ fontFamily: 'Inter', fontSize: 11, color: C.muted, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Segunda, 5 Mai
+              </p>
+              <h1 style={{
+                fontFamily: "'Playfair Display', serif",
+                fontSize: 24, fontWeight: 700, color: C.text,
+                marginTop: 3, lineHeight: 1.2,
+              }}>Bom dia, Beatriz</h1>
+            </div>
+            <div style={{ animation: 'fadeIn 0.5s ease-out 0.1s both' }}>
+              <Monogram size={40} ringOpacity={0.4} />
+            </div>
+          </div>
+
+          {/* ── Protocolo Ativo Card ────── */}
+          <div style={{ padding: '18px 24px 0', animation: 'fadeUp 0.5s ease-out 0.12s both' }}>
+            <div style={{
+              background: C.bgGold, border: `1px solid ${C.border}`,
+              borderRadius: 20, padding: '20px',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                <div>
+                  <p style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: C.gold, marginBottom: 6 }}>
+                    Protocolo Ativo
+                  </p>
+                  <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: C.text, lineHeight: 1.15 }}>
+                    BPC-157
+                  </h2>
+                  <p style={{ fontFamily: 'Inter', fontSize: 12, color: C.muted, marginTop: 3 }}>
+                    Body Protection Compound
+                  </p>
+                </div>
+                <div style={{
+                  padding: '5px 12px', borderRadius: 20,
+                  background: 'rgba(201,169,110,0.14)', border: `1px solid ${C.border}`,
+                  fontSize: 11, color: C.gold, fontWeight: 600, fontFamily: 'Inter',
+                }}>Ativo</div>
+              </div>
+
+              {/* Progress */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
+                  <span style={{ fontFamily: 'Inter', fontSize: 12, color: C.muted }}>Dia 12 de 30</span>
+                  <span style={{ fontFamily: 'Inter', fontSize: 12, color: C.gold }}>40%</span>
+                </div>
+                <div style={{ height: 3, background: 'rgba(255,255,255,0.07)', borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{
+                    width: '40%', height: '100%', background: C.gold, borderRadius: 2,
+                    transformOrigin: 'left', animation: 'growBar 1s ease-out 0.4s both',
+                  }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 16 }}>
+                <div>
+                  <p style={{ fontFamily: 'Inter', fontSize: 10, color: C.muted2, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 2 }}>Dose</p>
+                  <p style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: C.text }}>500 mcg</p>
+                </div>
+                <div style={{ width: 1, background: C.borderSub }} />
+                <div>
+                  <p style={{ fontFamily: 'Inter', fontSize: 10, color: C.muted2, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 2 }}>Próxima aplicação</p>
+                  <p style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: C.text }}>Amanhã · 08h00</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Resumo rápido ────────────── */}
+          <div style={{ padding: '18px 24px 0', animation: 'fadeUp 0.5s ease-out 0.2s both' }}>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {[
+                { label: 'Peptídeos', value: '5', sub: 'prescritos' },
+                { label: 'Consultas', value: '3', sub: 'realizadas' },
+                { label: 'Dias', value: '45', sub: 'de protocolo' },
+              ].map(s => (
+                <div key={s.label} style={{
+                  flex: 1, background: C.bgCard, border: `1px solid ${C.borderSub}`,
+                  borderRadius: 14, padding: '14px 10px', textAlign: 'center',
+                }}>
+                  <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: C.text }}>{s.value}</div>
+                  <div style={{ fontFamily: 'Inter', fontSize: 10, color: C.muted, marginTop: 2 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Nutrição do Dia ──────────── */}
+          <div style={{ padding: '18px 24px 0', animation: 'fadeUp 0.5s ease-out 0.26s both' }}>
+            <div style={{
+              background: C.bgCard, border: `1px solid ${C.borderSub}`,
+              borderRadius: 20, padding: '18px 20px', cursor: 'pointer',
+            }}
+            onMouseDown={e => e.currentTarget.style.background = 'rgba(255,255,255,0.065)'}
+            onMouseUp={e => e.currentTarget.style.background = C.bgCard}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <div>
+                  <p style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: C.gold, marginBottom: 4 }}>
+                    Nutrição de Hoje
+                  </p>
+                  <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 600, color: C.text }}>
+                    1.340 <span style={{ fontSize: 12, color: C.muted, fontFamily: 'Inter', fontWeight: 400 }}>/ 1.800 kcal</span>
+                  </p>
+                </div>
+                {/* Mini circular progress */}
+                <div style={{ position: 'relative', width: 48, height: 48 }}>
+                  <svg width="48" height="48" viewBox="0 0 48 48">
+                    <circle cx="24" cy="24" r="19" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="4"/>
+                    <circle cx="24" cy="24" r="19" fill="none" stroke={C.gold} strokeWidth="4"
+                      strokeDasharray={`${2 * Math.PI * 19 * 0.744} ${2 * Math.PI * 19 * (1 - 0.744)}`}
+                      strokeDashoffset={2 * Math.PI * 19 * 0.25}
+                      strokeLinecap="round" transform="rotate(-90 24 24)"/>
+                  </svg>
+                  <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter', fontSize: 10.5, fontWeight: 700, color: C.gold }}>74%</span>
+                </div>
+              </div>
+              {/* Macro bars */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                {[
+                  { label: 'Proteína', g: 98, total: 130, color: '#C9A96E' },
+                  { label: 'Carboidrato', g: 142, total: 200, color: '#A8C4D4' },
+                  { label: 'Gordura', g: 44, total: 60, color: '#D4A8B4' },
+                ].map(m => (
+                  <div key={m.label}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontFamily: 'Inter', fontSize: 10.5, color: C.muted }}>{m.label}</span>
+                      <span style={{ fontFamily: 'Inter', fontSize: 10.5, color: C.muted2 }}>{m.g}g</span>
+                    </div>
+                    <div style={{ height: 3, background: 'rgba(255,255,255,0.07)', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{ width: `${m.g/m.total*100}%`, height: '100%', background: m.color, borderRadius: 2, transformOrigin: 'left', animation: 'growBar 1s ease-out 0.5s both' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Artigos ──────────────────── */}
+          <div style={{ padding: '20px 24px 0', animation: 'fadeUp 0.5s ease-out 0.28s both' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 13 }}>
+              <h3 style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 600, color: C.text }}>Artigos Científicos</h3>
+              <span onClick={() => {}} style={{ fontFamily: 'Inter', fontSize: 12, color: C.gold, cursor: 'pointer' }}>Ver todos</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {ARTICLES.map((a, i) => (
+                <div key={i} style={{
+                  background: C.bgCard, border: `1px solid ${C.borderSub}`,
+                  borderRadius: 16, padding: '14px 16px',
+                  cursor: 'pointer',
+                }}
+                onMouseDown={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+                onMouseUp={e => e.currentTarget.style.background = C.bgCard}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontFamily: 'Inter', fontSize: 10, fontWeight: 600,
+                        letterSpacing: '0.1em', textTransform: 'uppercase',
+                        color: C.gold, marginBottom: 6,
+                      }}>{a.source} · {a.year}</div>
+                      <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 13.5, fontWeight: 500, color: C.text, lineHeight: 1.45 }}>
+                        {a.title}
+                      </p>
+                    </div>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(248,245,240,0.25)" strokeWidth="2">
+                      <path d="M9 18l6-6-6-6"/>
+                    </svg>
+                  </div>
+                  <p style={{ fontFamily: 'Inter', fontSize: 11, color: C.muted, marginTop: 8 }}>{a.mins} min de leitura</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ height: 24 }} />
+        </div>
+        <TabBar active="home" onTab={onNav} />
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  SCREEN 3 — PROTOCOLO
+  // ─────────────────────────────────────────────
+  const PEPTIDES = [
+    { name: 'BPC-157',       full: 'Body Protection Compound',    dose: '500 mcg', freq: '1× ao dia',       via: 'Subcutânea', status: 'ativo',   day: 12, total: 30 },
+    { name: 'GHK-Cu',        full: 'Cobre-peptídeo',              dose: '2 mg',    freq: '3× por semana',   via: 'Tópica',     status: 'ativo',   day: null },
+    { name: 'Epithalon',     full: 'Tetrapeptídeo Epitalâmico',   dose: '10 mg',   freq: 'Ciclo ativo',     via: 'Subcutânea', status: 'ativo',   day: null },
+    { name: 'Ipamorelin',    full: 'Secretagogo GH',              dose: '200 mcg', freq: 'Dose noturna',    via: 'Subcutânea', status: 'ativo',   day: null },
+    { name: 'Thymosin β4',   full: 'Timosina Beta-4',             dose: '1 mg',    freq: '2× por semana',   via: 'Subcutânea', status: 'pausado', day: null },
+  ];
+
+  function ProtocoloScreen({ onNav }) {
+    return (
+      <div className="screen-enter" style={{ width: '100%', height: '100%', background: C.bg, position: 'relative' }}>
+        <div style={{ height: 'calc(100% - 78px)', overflowY: 'auto' }}>
+
+          <div style={{ padding: '18px 24px 0', animation: 'fadeUp 0.5s ease-out 0.05s both' }}>
+            <p style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: C.gold, marginBottom: 6 }}>
+              Dra. Roseli Perfoll
+            </p>
+            <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700, color: C.text, marginBottom: 3 }}>
+              Seu Protocolo
+            </h1>
+            <p style={{ fontFamily: 'Inter', fontSize: 12, color: C.muted }}>
+              Atualizado em 15 abr. 2026 · 5 peptídeos
+            </p>
+          </div>
+
+          <div style={{ padding: '16px 24px 0', display: 'flex', flexDirection: 'column', gap: 10, animation: 'fadeUp 0.5s ease-out 0.14s both' }}>
+            {PEPTIDES.map((p, i) => {
+              const isAtivo = p.status === 'ativo';
+              return (
+                <div key={p.name} style={{
+                  background: C.bgCard, border: `1px solid ${C.borderSub}`,
+                  borderRadius: 18, padding: '16px 18px',
+                  position: 'relative', overflow: 'hidden',
+                  cursor: 'pointer',
+                }}
+                onMouseDown={e => e.currentTarget.style.background = 'rgba(255,255,255,0.065)'}
+                onMouseUp={e => e.currentTarget.style.background = C.bgCard}
+                >
+                  {/* Left accent bar */}
+                  <div style={{
+                    position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
+                    background: isAtivo ? C.gold : 'rgba(248,245,240,0.18)',
+                    borderRadius: '18px 0 0 18px',
+                  }} />
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                    <div>
+                      <h3 style={{
+                        fontFamily: "'Playfair Display', serif", fontSize: 17, fontWeight: 600,
+                        color: isAtivo ? C.text : C.muted, marginBottom: 2,
+                      }}>{p.name}</h3>
+                      <p style={{ fontFamily: 'Inter', fontSize: 11, color: C.muted2 }}>{p.full}</p>
+                    </div>
+                    <div style={{
+                      padding: '4px 11px', borderRadius: 20,
+                      background: isAtivo ? 'rgba(201,169,110,0.12)' : 'rgba(255,255,255,0.06)',
+                      border: `1px solid ${isAtivo ? C.border : 'rgba(255,255,255,0.1)'}`,
+                      fontSize: 10, fontWeight: 600, fontFamily: 'Inter',
+                      color: isAtivo ? C.gold : C.muted,
+                      letterSpacing: '0.05em', flexShrink: 0,
+                    }}>{isAtivo ? 'Ativo' : 'Pausado'}</div>
+                  </div>
+
+                  {/* Details row */}
+                  <div style={{ display: 'flex', gap: 0, flexWrap: 'wrap', rowGap: 6 }}>
+                    {[
+                      { label: 'Dose', value: p.dose },
+                      { label: 'Frequência', value: p.freq },
+                      { label: 'Via', value: p.via },
+                    ].map((d, j) => (
+                      <div key={j} style={{ marginRight: 20 }}>
+                        <p style={{ fontFamily: 'Inter', fontSize: 9.5, color: C.muted2, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 2 }}>{d.label}</p>
+                        <p style={{ fontFamily: 'Inter', fontSize: 12.5, fontWeight: 500, color: isAtivo ? C.text : C.muted }}>{d.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Progress bar if has day tracking */}
+                  {p.day && (
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                        <span style={{ fontFamily: 'Inter', fontSize: 10, color: C.muted }}>Dia {p.day} de {p.total}</span>
+                        <span style={{ fontFamily: 'Inter', fontSize: 10, color: C.gold }}>{Math.round(p.day/p.total*100)}%</span>
+                      </div>
+                      <div style={{ height: 2, background: 'rgba(255,255,255,0.07)', borderRadius: 1, overflow: 'hidden' }}>
+                        <div style={{
+                          width: `${p.day/p.total*100}%`, height: '100%',
+                          background: C.gold, borderRadius: 1,
+                          transformOrigin: 'left', animation: 'growBar 1s ease-out 0.5s both',
+                        }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Note */}
+          <div style={{ margin: '16px 24px 0' }}>
+            <div style={{
+              background: C.bgGoldSub, border: `1px solid rgba(201,169,110,0.1)`,
+              borderRadius: 12, padding: '12px 16px',
+              display: 'flex', gap: 10, alignItems: 'flex-start',
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0, marginTop: 1 }}>
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <p style={{ fontFamily: 'Inter', fontSize: 12, color: C.muted, lineHeight: 1.6 }}>
+                Nunca altere doses ou frequências sem orientação médica. Em caso de dúvida, entre em contato com o consultório.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ height: 24 }} />
+        </div>
+        <TabBar active="protocolo" onTab={onNav} />
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  SCREEN 4 — BIBLIOTECA
+  // ─────────────────────────────────────────────
+  const LIBRARY = [
+    { tag: 'Peptídeos', title: 'Mecanismos de cicatrização via BPC-157: revisão sistemática', source: 'J. Peptide Science', year: 2024, mins: 8 },
+    { tag: 'Peptídeos', title: 'GHK-Cu e regeneração dérmica: evidências em estudos controlados', source: 'Int. J. Mol. Sciences', year: 2023, mins: 12 },
+    { tag: 'Longevidade', title: 'Epithalon e regulação da telomerase em células humanas', source: 'Rejuvenation Research', year: 2024, mins: 10 },
+    { tag: 'Hormônios', title: 'Ipamorelin vs GHRP-2: comparativo de segurança e eficácia', source: 'Growth Hormone & IGF Res.', year: 2023, mins: 15 },
+    { tag: 'Longevidade', title: 'Medicina de precisão e envelhecimento feminino: onde estamos', source: 'Nature Aging', year: 2024, mins: 18 },
+    { tag: 'Nutrição', title: 'Micronutrientes e síntese de peptídeos endógenos: revisão', source: 'Nutrients Journal', year: 2024, mins: 11 },
+  ];
+  const FILTERS = ['Todos', 'Peptídeos', 'Longevidade', 'Hormônios', 'Nutrição'];
+
+  function BibliotecaScreen({ onNav }) {
+    const [filter, setFilter] = React.useState('Todos');
+    const filtered = filter === 'Todos' ? LIBRARY : LIBRARY.filter(a => a.tag === filter);
+    return (
+      <div className="screen-enter" style={{ width: '100%', height: '100%', background: C.bg, position: 'relative' }}>
+        <div style={{ height: 'calc(100% - 78px)', overflowY: 'auto' }}>
+
+          <div style={{ padding: '18px 24px 0', animation: 'fadeUp 0.5s ease-out 0.05s both' }}>
+            <p style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: C.gold, marginBottom: 6 }}>
+              Curadoria Científica
+            </p>
+            <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700, color: C.text }}>
+              Biblioteca
+            </h1>
+          </div>
+
+          {/* Filters */}
+          <div style={{
+            padding: '14px 24px 0', display: 'flex', gap: 8, overflowX: 'auto',
+            animation: 'fadeUp 0.5s ease-out 0.12s both',
+          }}>
+            {FILTERS.map(f => (
+              <div key={f} onClick={() => setFilter(f)} style={{
+                padding: '7px 14px', borderRadius: 20, flexShrink: 0, cursor: 'pointer',
+                background: filter === f ? C.gold : C.bgCard,
+                border: `1px solid ${filter === f ? 'transparent' : C.borderSub}`,
+                fontFamily: 'Inter', fontSize: 12, fontWeight: filter === f ? 600 : 400,
+                color: filter === f ? '#0D1B2A' : C.muted,
+                transition: 'all 0.15s',
+              }}>{f}</div>
+            ))}
+          </div>
+
+          {/* Articles */}
+          <div style={{ padding: '14px 24px 0', display: 'flex', flexDirection: 'column', gap: 10, animation: 'fadeUp 0.5s ease-out 0.18s both' }}>
+            {filtered.map((a, i) => (
+              <div key={i} style={{
+                background: C.bgCard, border: `1px solid ${C.borderSub}`,
+                borderRadius: 16, padding: '16px 18px', cursor: 'pointer',
+              }}
+              onMouseDown={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+              onMouseUp={e => e.currentTarget.style.background = C.bgCard}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 7, alignItems: 'center' }}>
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, letterSpacing: '0.12em',
+                        textTransform: 'uppercase', color: C.gold, fontFamily: 'Inter',
+                      }}>{a.tag}</span>
+                      <span style={{ fontSize: 9, color: C.muted2, fontFamily: 'Inter' }}>{a.source} · {a.year}</span>
+                    </div>
+                    <p style={{
+                      fontFamily: "'Playfair Display', serif", fontSize: 14, fontWeight: 500,
+                      color: C.text, lineHeight: 1.45,
+                    }}>{a.title}</p>
+                  </div>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(248,245,240,0.22)" strokeWidth="2">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+                <p style={{ fontFamily: 'Inter', fontSize: 11, color: C.muted2, marginTop: 9 }}>
+                  {a.mins} min de leitura
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ height: 24 }} />
+        </div>
+        <TabBar active="biblioteca" onTab={onNav} />
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  SCREEN 5 — PERFIL
+  // ─────────────────────────────────────────────
+  const CONSULTAS = [
+    { date: '15 abr. 2026', type: 'Acompanhamento',     note: 'Ajuste de dose BPC-157' },
+    { date: '10 fev. 2026', type: 'Revisão de Protocolo', note: 'Adição do Epithalon' },
+    { date: '05 dez. 2025', type: 'Consulta Inicial',   note: 'Definição do protocolo base' },
+  ];
+
+  function PerfilScreen({ onNav }) {
+    return (
+      <div className="screen-enter" style={{ width: '100%', height: '100%', background: C.bg, position: 'relative' }}>
+        <div style={{ height: 'calc(100% - 78px)', overflowY: 'auto' }}>
+
+          {/* Header */}
+          <div style={{
+            padding: '18px 24px 22px', textAlign: 'center',
+            background: 'linear-gradient(180deg, rgba(201,169,110,0.07) 0%, transparent 100%)',
+            animation: 'fadeUp 0.5s ease-out 0.05s both',
+          }}>
+            <div style={{ marginBottom: 14 }}>
+              <Monogram size={76} ringOpacity={0.4} />
+            </div>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 21, fontWeight: 700, color: C.text }}>
+              Beatriz Campos
+            </h2>
+            <p style={{ fontFamily: 'Inter', fontSize: 12, color: C.muted, marginTop: 4 }}>42 anos · beatriz@email.com</p>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 11,
+              background: C.bgGold, border: `1px solid ${C.border}`,
+              borderRadius: 20, padding: '5px 14px',
+            }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill={C.gold} stroke="none">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: C.gold }}>
+                Paciente Ativa
+              </span>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div style={{ padding: '0 24px 18px', display: 'flex', gap: 10, animation: 'fadeUp 0.5s ease-out 0.12s both' }}>
+            {[
+              { v: '3', l: 'Consultas' },
+              { v: '5', l: 'Peptídeos' },
+              { v: '45d', l: 'Protocolo' },
+            ].map(s => (
+              <div key={s.l} style={{
+                flex: 1, background: C.bgCard, border: `1px solid ${C.borderSub}`,
+                borderRadius: 14, padding: '14px 8px', textAlign: 'center',
+              }}>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: C.text }}>{s.v}</div>
+                <div style={{ fontFamily: 'Inter', fontSize: 10, color: C.muted, marginTop: 3 }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Próxima consulta */}
+          <div style={{ padding: '0 24px 18px', animation: 'fadeUp 0.5s ease-out 0.18s both' }}>
+            <div style={{
+              background: C.bgGold, border: `1px solid ${C.border}`,
+              borderRadius: 16, padding: '16px 18px',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <div>
+                <p style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.gold, marginBottom: 5 }}>
+                  Próxima Consulta
+                </p>
+                <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 600, color: C.text }}>2 de junho, 2026</p>
+                <p style={{ fontFamily: 'Inter', fontSize: 12, color: C.muted, marginTop: 2 }}>14h30 · Consultório SP</p>
+              </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.8" strokeLinecap="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
+          </div>
+
+          {/* Histórico */}
+          <div style={{ padding: '0 24px', animation: 'fadeUp 0.5s ease-out 0.24s both' }}>
+            <p style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: C.muted, marginBottom: 10 }}>
+              Histórico de Consultas
+            </p>
+            <div style={{ background: C.bgCard, border: `1px solid ${C.borderSub}`, borderRadius: 16, overflow: 'hidden' }}>
+              {CONSULTAS.map((c, i) => (
+                <div key={i} style={{
+                  padding: '14px 16px',
+                  borderBottom: i < CONSULTAS.length - 1 ? `1px solid rgba(255,255,255,0.055)` : 'none',
+                  cursor: 'pointer',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 14, fontWeight: 500, color: C.text, marginBottom: 3 }}>{c.type}</p>
+                      <p style={{ fontFamily: 'Inter', fontSize: 11, color: C.muted }}>{c.note}</p>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
+                      <p style={{ fontFamily: 'Inter', fontSize: 11, color: C.muted2 }}>{c.date}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Agendar CTA */}
+          <div style={{ padding: '18px 24px', animation: 'fadeUp 0.5s ease-out 0.3s both' }}>
+            <button style={{
+              width: '100%', padding: '15px',
+              background: C.gold, border: 'none', borderRadius: 14,
+              color: '#0D1B2A', fontFamily: 'Inter',
+              fontSize: 14, fontWeight: 700, letterSpacing: '0.03em',
+              cursor: 'pointer',
+              boxShadow: '0 6px 22px rgba(201,169,110,0.22)',
+              transition: 'transform 0.14s, box-shadow 0.14s',
+            }}
+            onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.97)'; }}
+            onMouseUp={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+            >Agendar Consulta</button>
+          </div>
+
+          {/* Settings */}
+          <div style={{ padding: '0 24px 24px', animation: 'fadeUp 0.5s ease-out 0.34s both' }}>
+            <div style={{ background: C.bgCard, border: `1px solid ${C.borderSub}`, borderRadius: 16, overflow: 'hidden' }}>
+              {[
+                { icon: '🔔', l: 'Notificações', d: 'Ativas' },
+                { icon: '📄', l: 'Documentos médicos', d: '' },
+                { icon: '🔒', l: 'Privacidade', d: '' },
+              ].map((s, i) => (
+                <div key={s.l} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '13px 16px',
+                  borderBottom: i < 2 ? `1px solid rgba(255,255,255,0.055)` : 'none',
+                  cursor: 'pointer',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 15 }}>{s.icon}</span>
+                    <span style={{ fontFamily: 'Inter', fontSize: 14, color: C.text }}>{s.l}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    {s.d && <span style={{ fontFamily: 'Inter', fontSize: 12, color: C.muted }}>{s.d}</span>}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(248,245,240,0.22)" strokeWidth="2.2"><path d="M9 18l6-6-6-6"/></svg>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <TabBar active="perfil" onTab={onNav} />
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  SCREEN 5 — NUTRIÇÃO & MACROS
+  // ─────────────────────────────────────────────
+  const REFEICOES = [
+    { label: 'Café da Manhã', hora: '07h30', kcal: 390, p: 28, c: 42, g: 11, items: ['Ovos mexidos', 'Pão integral', 'Café com leite'] },
+    { label: 'Almoço',        hora: '12h45', kcal: 580, p: 46, c: 58, g: 18, items: ['Frango grelhado 200g', 'Arroz integral', 'Salada verde'] },
+    { label: 'Lanche',        hora: '16h00', kcal: 210, p: 24, c: 18, g: 6,  items: ['Whey protein', 'Banana'] },
+    { label: 'Jantar',        hora: '20h00', kcal: 160, p: 0,  c: 24, g: 9,  items: ['Sopa de legumes', 'Torrada integral'] },
+  ];
+
+  function NutricaoScreen({ onNav, onRegistrar, onDashboard }) {
+    const totalKcal = REFEICOES.reduce((s, r) => s + r.kcal, 0);
+    const metaKcal  = 1800;
+    const pct = Math.round(totalKcal / metaKcal * 100);
+    const totalP = REFEICOES.reduce((s, r) => s + r.p, 0);
+    const totalC = REFEICOES.reduce((s, r) => s + r.c, 0);
+    const totalG = REFEICOES.reduce((s, r) => s + r.g, 0);
+    const metaP = 130, metaC = 200, metaG = 60;
+    const circumference = 2 * Math.PI * 54;
+
+    return (
+      <div className="screen-enter" style={{ width: '100%', height: '100%', background: C.bg, position: 'relative' }}>
+        <div style={{ height: 'calc(100% - 78px)', overflowY: 'auto' }}>
+
+          {/* Header */}
+          <div style={{ padding: '18px 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', animation: 'fadeUp 0.5s ease-out 0.05s both' }}>
+            <div>
+              <p style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: C.gold, marginBottom: 5 }}>
+                Segunda, 5 Mai
+              </p>
+              <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700, color: C.text, lineHeight: 1.15 }}>
+                Nutrição de Hoje
+              </h1>
+            </div>
+            <button onClick={onDashboard} style={{
+              background: C.bgCard, border: `1px solid ${C.borderSub}`,
+              borderRadius: 12, padding: '8px 12px', cursor: 'pointer',
+              fontFamily: 'Inter', fontSize: 11, color: C.gold, fontWeight: 600,
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>
+              Semana
+            </button>
+          </div>
+
+          {/* Circular gauge + macro bars */}
+          <div style={{ padding: '18px 24px 0', animation: 'fadeUp 0.5s ease-out 0.12s both' }}>
+            <div style={{
+              background: C.bgGold, border: `1px solid ${C.border}`,
+              borderRadius: 22, padding: '22px 24px',
+              display: 'flex', gap: 20, alignItems: 'center',
+            }}>
+              {/* Circular */}
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <svg width="120" height="120" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8"/>
+                  <circle cx="60" cy="60" r="54" fill="none" stroke={C.gold} strokeWidth="8"
+                    strokeDasharray={`${circumference * pct / 100} ${circumference * (1 - pct / 100)}`}
+                    strokeDashoffset={circumference * 0.25}
+                    strokeLinecap="round"
+                    transform="rotate(-90 60 60)"
+                    style={{ transition: 'stroke-dasharray 1.2s ease-out' }}
+                  />
+                </svg>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: C.text, lineHeight: 1 }}>{totalKcal}</span>
+                  <span style={{ fontFamily: 'Inter', fontSize: 9, color: C.muted, marginTop: 3 }}>/ {metaKcal} kcal</span>
+                  <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 700, color: C.gold, marginTop: 4 }}>{pct}%</span>
+                </div>
+              </div>
+
+              {/* Macro bars */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  { label: 'Proteína',     g: totalP, meta: metaP, color: C.gold },
+                  { label: 'Carboidrato',  g: totalC, meta: metaC, color: '#A8C4D4' },
+                  { label: 'Gordura',      g: totalG, meta: metaG, color: '#D4A8B4' },
+                ].map(m => (
+                  <div key={m.label}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                      <span style={{ fontFamily: 'Inter', fontSize: 11, color: C.muted }}>{m.label}</span>
+                      <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: C.text }}>
+                        {m.g}g <span style={{ color: C.muted2, fontWeight: 400 }}>/ {m.meta}g</span>
+                      </span>
+                    </div>
+                    <div style={{ height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{
+                        width: `${Math.min(m.g/m.meta*100, 100)}%`, height: '100%',
+                        background: m.color, borderRadius: 2,
+                        transformOrigin: 'left', animation: 'growBar 1.1s ease-out 0.3s both',
+                      }} />
+                    </div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 9.5, color: C.muted2, marginTop: 3, textAlign: 'right' }}>
+                      {Math.round(m.g/m.meta*100)}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Botão registrar */}
+          <div style={{ padding: '14px 24px 0', animation: 'fadeUp 0.5s ease-out 0.18s both' }}>
+            <button onClick={onRegistrar} style={{
+              width: '100%', padding: '15px',
+              background: C.gold, border: 'none', borderRadius: 14,
+              color: '#0D1B2A', fontFamily: 'Inter',
+              fontSize: 14, fontWeight: 700, letterSpacing: '0.03em',
+              cursor: 'pointer',
+              boxShadow: '0 8px 24px rgba(201,169,110,0.26)',
+              transition: 'transform 0.14s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}
+            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.97)'}
+            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Registrar Refeição
+            </button>
+          </div>
+
+          {/* Lista de refeições */}
+          <div style={{ padding: '18px 24px 0', animation: 'fadeUp 0.5s ease-out 0.24s both' }}>
+            <p style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: C.muted, marginBottom: 12 }}>
+              Refeições de Hoje
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {REFEICOES.map((r, i) => (
+                <div key={i} style={{
+                  background: C.bgCard, border: `1px solid ${C.borderSub}`,
+                  borderRadius: 16, padding: '14px 16px', cursor: 'pointer',
+                }}
+                onMouseDown={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+                onMouseUp={e => e.currentTarget.style.background = C.bgCard}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 9 }}>
+                    <div>
+                      <p style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 2 }}>{r.label}</p>
+                      <p style={{ fontFamily: 'Inter', fontSize: 10.5, color: C.muted }}>{r.hora} · {r.items.join(', ')}</p>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 10 }}>
+                      <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 600, color: C.gold }}>{r.kcal}</p>
+                      <p style={{ fontFamily: 'Inter', fontSize: 9, color: C.muted2 }}>kcal</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 14 }}>
+                    {[
+                      { l: 'P', v: r.p, c: C.gold },
+                      { l: 'C', v: r.c, c: '#A8C4D4' },
+                      { l: 'G', v: r.g, c: '#D4A8B4' },
+                    ].map(m => (
+                      <div key={m.l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontFamily: 'Inter', fontSize: 9.5, fontWeight: 700, color: m.c }}>{m.l}</span>
+                        <span style={{ fontFamily: 'Inter', fontSize: 11, color: C.muted }}>{m.v}g</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Link para meta nutricional */}
+          <div style={{ padding: '14px 24px 0', animation: 'fadeUp 0.5s ease-out 0.32s both' }}>
+            <button onClick={() => onNav('meta')} style={{
+              width: '100%', padding: '13px',
+              background: 'transparent', border: `1px solid ${C.borderSub}`,
+              borderRadius: 14, cursor: 'pointer',
+              fontFamily: 'Inter', fontSize: 13, fontWeight: 500, color: C.muted,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              transition: 'border-color 0.15s, color 0.15s',
+            }}
+            onMouseDown={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.gold; }}
+            onMouseUp={e => { e.currentTarget.style.borderColor = C.borderSub; e.currentTarget.style.color = C.muted; }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 1 4.93 19.07"/>
+                <path d="M21.17 2.83L19.07 4.93"/>
+              </svg>
+              Configurar Meta Nutricional
+            </button>
+          </div>
+
+          <div style={{ height: 24 }} />
+        </div>
+        <TabBar active="nutricao" onTab={onNav} />
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  SCREEN 6 — REGISTRAR REFEIÇÃO
+  // ─────────────────────────────────────────────
+  function RegistrarRefeicaoScreen({ onBack, onConfirmar }) {
+    const [desc, setDesc] = React.useState('');
+    const [aiDone, setAiDone] = React.useState(false);
+    const sugestoes = ['Frango grelhado', 'Salada verde', 'Whey protein', 'Arroz integral', 'Ovo cozido', 'Abacate'];
+
+    const handleSugestao = (s) => {
+      setDesc(prev => prev ? prev + ', ' + s : s);
+      setAiDone(true);
+    };
+
+    return (
+      <div className="screen-enter" style={{ width: '100%', height: '100%', background: C.bg, display: 'flex', flexDirection: 'column' }}>
+
+        {/* Header */}
+        <div style={{ padding: '16px 24px 12px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+          <button onClick={onBack} style={{
+            background: C.bgCard, border: `1px solid ${C.borderSub}`,
+            borderRadius: 10, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2.2" strokeLinecap="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+          <div>
+            <p style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: C.gold, marginBottom: 2 }}>Nutrição</p>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 700, color: C.text }}>Registrar Refeição</h2>
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '4px 24px 24px' }}>
+
+          {/* Campo texto */}
+          <div style={{ animation: 'fadeUp 0.4s ease-out 0.05s both', marginBottom: 14 }}>
+            <label style={{ fontFamily: 'Inter', fontSize: 11, color: C.muted, letterSpacing: '0.06em', display: 'block', marginBottom: 8 }}>
+              Descreva o que comeu
+            </label>
+            <textarea
+              value={desc}
+              onChange={e => { setDesc(e.target.value); if(e.target.value.length > 5) setAiDone(true); }}
+              placeholder="Ex: Frango grelhado 150g, arroz integral, salada..."
+              style={{
+                width: '100%', minHeight: 88,
+                background: C.bgCard, border: `1px solid ${C.border}`,
+                borderRadius: 14, padding: '13px 15px',
+                fontFamily: 'Inter', fontSize: 13, color: C.text,
+                lineHeight: 1.55, resize: 'none', outline: 'none',
+              }}
+            />
+          </div>
+
+          {/* Foto do prato */}
+          <div style={{ animation: 'fadeUp 0.4s ease-out 0.1s both', marginBottom: 16 }}>
+            <button style={{
+              width: '100%', padding: '13px',
+              background: 'transparent', border: `1.5px dashed ${C.border}`,
+              borderRadius: 14, cursor: 'pointer',
+              fontFamily: 'Inter', fontSize: 13, fontWeight: 500, color: C.muted,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              transition: 'border-color 0.15s, color 0.15s',
+            }}
+            onMouseDown={e => { e.currentTarget.style.borderColor = C.gold; e.currentTarget.style.color = C.gold; }}
+            onMouseUp={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.muted; }}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              Foto do prato · IA analisa automaticamente
+            </button>
+          </div>
+
+          {/* Sugestões rápidas */}
+          <div style={{ animation: 'fadeUp 0.4s ease-out 0.14s both', marginBottom: 18 }}>
+            <p style={{ fontFamily: 'Inter', fontSize: 11, color: C.muted2, letterSpacing: '0.06em', marginBottom: 9 }}>Sugestões rápidas</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {sugestoes.map(s => (
+                <button key={s} onClick={() => handleSugestao(s)} style={{
+                  padding: '7px 14px', borderRadius: 20,
+                  background: C.bgCard, border: `1px solid ${C.borderSub}`,
+                  fontFamily: 'Inter', fontSize: 12, color: C.muted, cursor: 'pointer',
+                  transition: 'all 0.14s',
+                }}
+                onMouseDown={e => { e.currentTarget.style.borderColor = C.gold; e.currentTarget.style.color = C.gold; }}
+                onMouseUp={e => { e.currentTarget.style.borderColor = C.borderSub; e.currentTarget.style.color = C.muted; }}
+                >{s}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Estimativa IA */}
+          {aiDone && (
+            <div style={{ animation: 'fadeUp 0.4s ease-out both', marginBottom: 20 }}>
+              <div style={{
+                background: C.bgGold, border: `1px solid ${C.border}`,
+                borderRadius: 16, padding: '16px 18px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: 8,
+                    background: 'rgba(201,169,110,0.18)', border: `1px solid ${C.border}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 14,
+                  }}>🤖</div>
+                  <div>
+                    <p style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 700, color: C.gold, letterSpacing: '0.06em' }}>IA estimou</p>
+                    <p style={{ fontFamily: 'Inter', fontSize: 10, color: C.muted2, marginTop: 1 }}>Baseado na descrição</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
+                  <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 700, color: C.text }}>420</span>
+                  <span style={{ fontFamily: 'Inter', fontSize: 13, color: C.muted }}>kcal · 350g</span>
+                </div>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  {[
+                    { l: 'Proteína', v: '38g', c: C.gold },
+                    { l: 'Carboidr.', v: '28g', c: '#A8C4D4' },
+                    { l: 'Gordura', v: '12g', c: '#D4A8B4' },
+                  ].map(m => (
+                    <div key={m.l}>
+                      <p style={{ fontFamily: 'Inter', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.muted2, marginBottom: 2 }}>{m.l}</p>
+                      <p style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: m.c }}>{m.v}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Confirmar */}
+          <button onClick={onConfirmar} style={{
+            width: '100%', padding: '15px',
+            background: aiDone ? C.gold : 'rgba(201,169,110,0.28)',
+            border: 'none', borderRadius: 14,
+            color: aiDone ? '#0D1B2A' : C.muted,
+            fontFamily: 'Inter', fontSize: 14, fontWeight: 700, letterSpacing: '0.03em',
+            cursor: aiDone ? 'pointer' : 'default',
+            boxShadow: aiDone ? '0 8px 24px rgba(201,169,110,0.26)' : 'none',
+            transition: 'all 0.2s',
+          }}>
+            Confirmar Refeição
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  SCREEN 7 — DASHBOARD SEMANAL
+  // ─────────────────────────────────────────────
+  const SEMANA_DADOS = [
+    { dia: 'Seg', kcal: 1800, prot: 122 },
+    { dia: 'Ter', kcal: 1650, prot: 108 },
+    { dia: 'Qua', kcal: 2010, prot: 138 },
+    { dia: 'Qui', kcal: 1720, prot: 115 },
+    { dia: 'Sex', kcal: 1340, prot: 98 },
+    { dia: 'Sáb', kcal: 0,    prot: 0 },
+    { dia: 'Dom', kcal: 0,    prot: 0 },
+  ];
+  const PESO_DADOS = [62.8, 62.5, 62.3, 62.4, 62.2];
+  const META_KCAL  = 1800;
+  const MAX_KCAL   = Math.max(...SEMANA_DADOS.map(d => d.kcal), META_KCAL);
+
+  function DashboardSemanalScreen({ onBack, onNav }) {
+    const mediaKcal = Math.round(SEMANA_DADOS.filter(d => d.kcal > 0).reduce((s, d) => s + d.kcal, 0) / SEMANA_DADOS.filter(d => d.kcal > 0).length);
+    const mediaProt = Math.round(SEMANA_DADOS.filter(d => d.prot > 0).reduce((s, d) => s + d.prot, 0) / SEMANA_DADOS.filter(d => d.prot > 0).length);
+    const hoje = 4; // Sex = índice 4
+
+    // Mini line chart points (peso)
+    const chartW = 280, chartH = 48;
+    const minP = Math.min(...PESO_DADOS), maxP = Math.max(...PESO_DADOS);
+    const pts = PESO_DADOS.map((v, i) => ({
+      x: (i / (PESO_DADOS.length - 1)) * chartW,
+      y: chartH - ((v - minP) / (maxP - minP + 0.01)) * (chartH - 8) - 4,
+    }));
+    const pathD = pts.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(' ');
+
+    return (
+      <div className="screen-enter" style={{ width: '100%', height: '100%', background: C.bg, display: 'flex', flexDirection: 'column' }}>
+
+        {/* Header */}
+        <div style={{ padding: '16px 24px 0', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0, animation: 'fadeUp 0.4s ease-out 0.05s both' }}>
+          <button onClick={onBack} style={{
+            background: C.bgCard, border: `1px solid ${C.borderSub}`,
+            borderRadius: 10, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2.2" strokeLinecap="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+          <div>
+            <p style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: C.gold, marginBottom: 2 }}>Nutrição</p>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 700, color: C.text }}>Dashboard Semanal</h2>
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px 24px' }}>
+
+          {/* Badge conquista */}
+          <div style={{ animation: 'fadeUp 0.4s ease-out 0.08s both', marginBottom: 14 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: 'rgba(201,169,110,0.1)', border: `1px solid ${C.border}`,
+              borderRadius: 20, padding: '6px 14px',
+            }}>
+              <span style={{ fontSize: 14 }}>🔥</span>
+              <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, color: C.gold }}>5 dias registrando!</span>
+            </div>
+          </div>
+
+          {/* Gráfico de barras — calorias 7 dias */}
+          <div style={{ animation: 'fadeUp 0.4s ease-out 0.12s both', marginBottom: 16 }}>
+            <div style={{
+              background: C.bgCard, border: `1px solid ${C.borderSub}`,
+              borderRadius: 20, padding: '18px 20px',
+            }}>
+              <p style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: C.muted, marginBottom: 14 }}>
+                Calorias — Últimos 7 dias
+              </p>
+              {/* Linha da meta */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 7, height: 80, position: 'relative' }}>
+                {/* linha meta */}
+                <div style={{
+                  position: 'absolute', left: 0, right: 0,
+                  bottom: `${(META_KCAL / MAX_KCAL) * 80}px`,
+                  height: 1, background: 'rgba(201,169,110,0.28)',
+                  borderTop: '1px dashed rgba(201,169,110,0.35)',
+                }} />
+                {SEMANA_DADOS.map((d, i) => {
+                  const barH = d.kcal > 0 ? Math.round((d.kcal / MAX_KCAL) * 72) : 0;
+                  const isHoje = i === hoje;
+                  return (
+                    <div key={d.dia} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, height: '100%', justifyContent: 'flex-end' }}>
+                      <div style={{
+                        width: '100%', height: barH,
+                        background: d.kcal === 0 ? 'rgba(255,255,255,0.05)' : isHoje ? C.gold : 'rgba(201,169,110,0.38)',
+                        borderRadius: '4px 4px 0 0',
+                        transition: 'height 1s ease-out',
+                        minHeight: d.kcal > 0 ? 4 : 0,
+                      }} />
+                      <span style={{ fontFamily: 'Inter', fontSize: 9.5, color: isHoje ? C.gold : C.muted2, fontWeight: isHoje ? 700 : 400 }}>{d.dia}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p style={{ fontFamily: 'Inter', fontSize: 10, color: C.muted2, marginTop: 10 }}>
+                <span style={{ color: 'rgba(201,169,110,0.55)' }}>— — </span>Meta: {META_KCAL} kcal
+              </p>
+            </div>
+          </div>
+
+          {/* Cards de médias */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 14, animation: 'fadeUp 0.4s ease-out 0.18s both' }}>
+            {[
+              { label: 'Kcal média',   value: mediaKcal, unit: 'kcal', sub: 'diárias' },
+              { label: 'Proteína média', value: mediaProt, unit: 'g',   sub: 'por dia' },
+              { label: 'Peso atual',   value: '62,2',   unit: 'kg',   sub: 'meta 60 kg' },
+            ].map((s, i) => (
+              <div key={i} style={{
+                flex: 1, background: C.bgCard, border: `1px solid ${C.borderSub}`,
+                borderRadius: 16, padding: '14px 10px', textAlign: 'center',
+              }}>
+                <p style={{ fontFamily: 'Inter', fontSize: 9.5, color: C.muted, letterSpacing: '0.06em', marginBottom: 5 }}>{s.label}</p>
+                <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: C.text, lineHeight: 1 }}>
+                  {s.value}<span style={{ fontSize: 10, color: C.gold, fontFamily: 'Inter' }}> {s.unit}</span>
+                </p>
+                <p style={{ fontFamily: 'Inter', fontSize: 9, color: C.muted2, marginTop: 3 }}>{s.sub}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Evolução do Peso — mini gráfico de linha */}
+          <div style={{ animation: 'fadeUp 0.4s ease-out 0.24s both', marginBottom: 16 }}>
+            <div style={{
+              background: C.bgCard, border: `1px solid ${C.borderSub}`,
+              borderRadius: 20, padding: '18px 20px',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                <div>
+                  <p style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', color: C.muted, marginBottom: 4 }}>
+                    Evolução do Peso
+                  </p>
+                  <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 700, color: C.text }}>
+                    62,2 <span style={{ fontSize: 13, color: C.muted, fontFamily: 'Inter', fontWeight: 400 }}>kg</span>
+                  </p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ fontFamily: 'Inter', fontSize: 11, color: '#7EC8A4', fontWeight: 600 }}>−0,6 kg</p>
+                  <p style={{ fontFamily: 'Inter', fontSize: 9.5, color: C.muted2, marginTop: 2 }}>nos últimos 5 dias</p>
+                </div>
+              </div>
+              {/* SVG mini line */}
+              <svg width={chartW} height={chartH + 8} viewBox={`0 0 ${chartW} ${chartH + 8}`} style={{ overflow: 'visible', width: '100%' }}>
+                {/* Gradiente de área */}
+                <defs>
+                  <linearGradient id="wGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={C.gold} stopOpacity="0.18"/>
+                    <stop offset="100%" stopColor={C.gold} stopOpacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d={`${pathD} L${pts[pts.length-1].x},${chartH+4} L${pts[0].x},${chartH+4} Z`} fill="url(#wGrad)"/>
+                <path d={pathD} fill="none" stroke={C.gold} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                {pts.map((p, i) => (
+                  <circle key={i} cx={p.x} cy={p.y} r={i === pts.length - 1 ? 4 : 2.5}
+                    fill={i === pts.length - 1 ? C.gold : 'transparent'}
+                    stroke={C.gold} strokeWidth="1.5"
+                  />
+                ))}
+              </svg>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                {['Seg', 'Ter', 'Qua', 'Qui', 'Sex'].map(d => (
+                  <span key={d} style={{ fontFamily: 'Inter', fontSize: 9.5, color: C.muted2 }}>{d}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  SCREEN 8 — META & PERFIL NUTRICIONAL
+  // ─────────────────────────────────────────────
+  function MetaNutricionalScreen({ onBack, onNav }) {
+    const [metaKcal, setMetaKcal] = React.useState(1800);
+    const [objetivo, setObjetivo] = React.useState('perda');
+    const [saved, setSaved] = React.useState(false);
+    const OBJETIVOS = [
+      { id: 'perda',     label: 'Perda de peso',  icon: '↓' },
+      { id: 'manutencao', label: 'Manutenção',    icon: '⟷' },
+      { id: 'ganho',     label: 'Ganho de massa', icon: '↑' },
+    ];
+    // Distribuição de macros por objetivo
+    const MACROS = {
+      perda:      { p: 40, c: 30, g: 30 },
+      manutencao: { p: 30, c: 40, g: 30 },
+      ganho:      { p: 30, c: 50, g: 20 },
+    };
+    const m = MACROS[objetivo];
+
+    // Pizza chart (SVG arc)
+    const slices = [
+      { pct: m.p, color: C.gold,     label: 'P' },
+      { pct: m.c, color: '#A8C4D4',  label: 'C' },
+      { pct: m.g, color: '#D4A8B4',  label: 'G' },
+    ];
+    const r = 38, cx = 44, cy = 44;
+    let startAngle = -90;
+    const arcSlices = slices.map(s => {
+      const angle = (s.pct / 100) * 360;
+      const start = startAngle;
+      startAngle += angle;
+      const startRad = (start * Math.PI) / 180;
+      const endRad   = ((start + angle) * Math.PI) / 180;
+      const x1 = cx + r * Math.cos(startRad);
+      const y1 = cy + r * Math.sin(startRad);
+      const x2 = cx + r * Math.cos(endRad);
+      const y2 = cy + r * Math.sin(endRad);
+      const largeArc = angle > 180 ? 1 : 0;
+      return { ...s, d: `M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${largeArc},1 ${x2},${y2} Z` };
+    });
+
+    return (
+      <div className="screen-enter" style={{ width: '100%', height: '100%', background: C.bg, display: 'flex', flexDirection: 'column' }}>
+
+        {/* Header */}
+        <div style={{ padding: '16px 24px 0', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0, animation: 'fadeUp 0.4s ease-out 0.05s both' }}>
+          <button onClick={onBack} style={{
+            background: C.bgCard, border: `1px solid ${C.borderSub}`,
+            borderRadius: 10, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2.2" strokeLinecap="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+          <div>
+            <p style={{ fontFamily: 'Inter', fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: C.gold, marginBottom: 2 }}>Nutrição</p>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 19, fontWeight: 700, color: C.text }}>Meta Nutricional</h2>
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px 24px' }}>
+
+          {/* Objetivo */}
+          <div style={{ animation: 'fadeUp 0.4s ease-out 0.1s both', marginBottom: 20 }}>
+            <p style={{ fontFamily: 'Inter', fontSize: 11, color: C.muted, letterSpacing: '0.08em', marginBottom: 11 }}>Objetivo</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {OBJETIVOS.map(o => (
+                <button key={o.id} onClick={() => { setObjetivo(o.id); setSaved(false); }} style={{
+                  flex: 1, padding: '11px 6px',
+                  background: objetivo === o.id ? C.bgGold : C.bgCard,
+                  border: `1px solid ${objetivo === o.id ? C.border : C.borderSub}`,
+                  borderRadius: 14, cursor: 'pointer', textAlign: 'center',
+                  transition: 'all 0.18s',
+                }}>
+                  <div style={{ fontSize: 17, marginBottom: 4, color: objetivo === o.id ? C.gold : C.muted }}>{o.icon}</div>
+                  <p style={{ fontFamily: 'Inter', fontSize: 10.5, fontWeight: objetivo === o.id ? 600 : 400, color: objetivo === o.id ? C.text : C.muted, lineHeight: 1.3 }}>{o.label}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Meta calórica slider */}
+          <div style={{ animation: 'fadeUp 0.4s ease-out 0.14s both', marginBottom: 22 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <p style={{ fontFamily: 'Inter', fontSize: 11, color: C.muted, letterSpacing: '0.08em' }}>Meta calórica diária</p>
+              <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: C.gold }}>
+                {metaKcal} <span style={{ fontSize: 11, color: C.muted, fontFamily: 'Inter', fontWeight: 400 }}>kcal</span>
+              </p>
+            </div>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="range" min="1200" max="2800" step="50"
+                value={metaKcal}
+                onChange={e => { setMetaKcal(Number(e.target.value)); setSaved(false); }}
+                style={{
+                  width: '100%', height: 4, appearance: 'none',
+                  background: `linear-gradient(to right, ${C.gold} ${(metaKcal - 1200) / 16}%, rgba(255,255,255,0.1) ${(metaKcal - 1200) / 16}%)`,
+                  borderRadius: 2, outline: 'none', cursor: 'pointer',
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 7 }}>
+              <span style={{ fontFamily: 'Inter', fontSize: 10, color: C.muted2 }}>1.200 kcal</span>
+              <span style={{ fontFamily: 'Inter', fontSize: 10, color: C.muted2 }}>2.800 kcal</span>
+            </div>
+          </div>
+
+          {/* Pizza chart + legenda */}
+          <div style={{ animation: 'fadeUp 0.4s ease-out 0.18s both', marginBottom: 22 }}>
+            <p style={{ fontFamily: 'Inter', fontSize: 11, color: C.muted, letterSpacing: '0.08em', marginBottom: 14 }}>Distribuição de macros</p>
+            <div style={{
+              background: C.bgCard, border: `1px solid ${C.borderSub}`,
+              borderRadius: 20, padding: '18px 20px',
+              display: 'flex', alignItems: 'center', gap: 22,
+            }}>
+              {/* SVG pizza */}
+              <svg width="88" height="88" viewBox="0 0 88 88" style={{ flexShrink: 0 }}>
+                {arcSlices.map((s, i) => (
+                  <path key={i} d={s.d} fill={s.color} opacity={0.88}/>
+                ))}
+                <circle cx="44" cy="44" r="22" fill={C.bg}/>
+              </svg>
+              {/* Legenda */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  { label: 'Proteína',    pct: m.p, g: Math.round(metaKcal * m.p / 100 / 4), color: C.gold },
+                  { label: 'Carboidrato', pct: m.c, g: Math.round(metaKcal * m.c / 100 / 4), color: '#A8C4D4' },
+                  { label: 'Gordura',     pct: m.g, g: Math.round(metaKcal * m.g / 100 / 9), color: '#D4A8B4' },
+                ].map(mac => (
+                  <div key={mac.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 2, background: mac.color, flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontFamily: 'Inter', fontSize: 11, color: C.text }}>{mac.label}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: mac.color }}>{mac.pct}%</span>
+                      <span style={{ fontFamily: 'Inter', fontSize: 10, color: C.muted2, marginLeft: 4 }}>{mac.g}g</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Salvar */}
+          <button onClick={() => setSaved(true)} style={{
+            width: '100%', padding: '15px',
+            background: saved ? 'rgba(201,169,110,0.18)' : C.gold,
+            border: saved ? `1px solid ${C.border}` : 'none',
+            borderRadius: 14,
+            color: saved ? C.gold : '#0D1B2A',
+            fontFamily: 'Inter', fontSize: 14, fontWeight: 700, letterSpacing: '0.03em',
+            cursor: 'pointer',
+            boxShadow: saved ? 'none' : '0 8px 24px rgba(201,169,110,0.26)',
+            transition: 'all 0.25s',
+          }}>
+            {saved ? '✓ Meta salva' : 'Salvar Meta'}
+          </button>
+
+        </div>
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  APP STATE MACHINE
+  // ─────────────────────────────────────────────
+  function DrRoseliApp() {
+    const [screen, setScreen] = useState('onboarding');
+    const go = id => setScreen(id);
+    return (
+      <IosFrame time="9:41" battery={92}>
+        {screen === 'onboarding'  && <OnboardingScreen      onStart={() => setScreen('home')} />}
+        {screen === 'home'        && <HomeScreen             onNav={go} />}
+        {screen === 'protocolo'   && <ProtocoloScreen        onNav={go} />}
+        {screen === 'nutricao'    && <NutricaoScreen         onNav={go} onRegistrar={() => go('registrar')} onDashboard={() => go('dashboard')} />}
+        {screen === 'registrar'   && <RegistrarRefeicaoScreen onBack={() => go('nutricao')} onConfirmar={() => go('nutricao')} />}
+        {screen === 'dashboard'   && <DashboardSemanalScreen  onBack={() => go('nutricao')} onNav={go} />}
+        {screen === 'meta'        && <MetaNutricionalScreen   onBack={() => go('nutricao')} onNav={go} />}
+        {screen === 'biblioteca'  && <BibliotecaScreen        onNav={go} />}
+        {screen === 'perfil'      && <PerfilScreen            onNav={go} />}
+      </IosFrame>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  //  PAGE WRAPPER
+  // ─────────────────────────────────────────────
+  function Page() {
+    return (
+      <div style={{
+        minHeight: '100vh', padding: '40px 20px 48px',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: 20,
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: 22, fontWeight: 600, fontStyle: 'italic',
+            color: C.gold, letterSpacing: '0.01em',
+          }}>Dra. Roseli Perfoll</div>
+          <p style={{ fontFamily: 'Inter', fontSize: 11, color: 'rgba(248,245,240,0.25)', marginTop: 5, letterSpacing: '0.08em' }}>
+            Protótipo clicável · iOS 17
+          </p>
+        </div>
+        <DrRoseliApp />
+        <p style={{ fontFamily: 'Inter', fontSize: 11, color: 'rgba(248,245,240,0.18)', textAlign: 'center', maxWidth: 360, lineHeight: 1.6 }}>
+          Toque em <em style={{ color: 'rgba(201,169,110,0.45)' }}>Entrar</em> · Navegue pela tab bar
+        </p>
+      </div>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<Page />);
+  </script>
+</body>
+</html>
